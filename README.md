@@ -11,6 +11,77 @@ of keeping comments and formatting (mostly) intact.
 go get go.xrstf.de/yamled
 ```
 
+## Usage
+
+### Unmarshalling
+
+Marshalling and unmarshalling works just as you've done it before. Use
+`yaml.v3` and, importantly, decode into a `yaml.Node` data stucture:
+
+```go
+import yaml "gopkg.in/yaml.v3"
+
+myDocument := strings.TrimSpace(`
+hello: world
+thisis: cool
+`)
+
+var node yaml.Node
+if err := yaml.NewDecoder(strings.NewReader(myDocument)).Decode(&node); err != nil {
+   log.Fatalf("Failed to decode YAML: %v", err)
+}
+```
+
+### Using
+
+Once you have a `yaml.Node`, wrap it in a `yamled.Document` (this is cheap
+and quick):
+
+```go
+import yaml "gopkg.in/yaml.v3"
+import "go.xrstf.de/yamled"
+
+doc, err := yamled.NewDocument(node)
+if err != nil {
+   log.Fatalf("Could not wrap node: %v", err) // most likely you used a non-document node
+}
+```
+
+This `Document` instance now allows you to manage the document in memory. You can have
+many different wrappers around the same `yaml.Node`, but `yamled` is not concurrency
+safe, so make sure only a single goroutine modifies a document at a time.
+
+Check the [API documentation](https://pkg.go.dev/go.xrstf.de/yamled) for the available functions.
+For example you can get a value from a deeply nested structure like so:
+
+```go
+node, exists := doc.Get("key", 0, "subkey", "settings", "firstname")
+if !exists {
+   log.Fatal("There is no path to key.0.subkey.settings.firstname")
+}
+
+fmt.Println(node.ToString()) // could print "Thomas"
+```
+
+### Marshalling
+
+**Important:** You cannot `yaml.Marshal()` a `yamled.Document` object. `yaml.v3` is hardcoded
+to only support document-wide settings (like the head comment) only if it encounters a
+well-known `yaml.Node`. Trying to marshal a document would result in a half-broken YAML and
+that's why there is a `panic()` built in.
+
+Instead, use the helper functions `.Bytes(indent)` and `.Encode(encoder)` to turn your document
+back into YAML.
+
+```go
+encoded, err := doc.Bytes(2)
+if err != nil {
+   log.Fatal("Failed to encode document as YAML: %v", err)
+}
+
+fmt.Println(string(encoded))
+```
+
 ## License
 
 MIT

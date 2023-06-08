@@ -26,10 +26,7 @@ type Document interface {
 	Bytes(indent int) ([]byte, error)
 	Encode(encoder *yaml.Encoder) error
 
-	Get(path ...Step) (Node, error)
-
-	// debugging only
-	GetNode() *yaml.Node
+	knot
 }
 
 type document struct {
@@ -50,14 +47,14 @@ func NewDocument(n *yaml.Node) (Document, error) {
 	}, nil
 }
 
-func (d *document) GetNode() *yaml.Node {
-	return d.node
+func (d *document) GetRootNode() (Node, error) {
+	return NewNode(d.node.Content[0])
 }
 
 func (d *document) Bytes(indent int) ([]byte, error) {
 	var buf bytes.Buffer
 	encoder := yaml.NewEncoder(&buf)
-	encoder.SetIndent(2)
+	encoder.SetIndent(indent)
 
 	if err := encoder.Encode(d.node); err != nil {
 		return nil, err
@@ -74,11 +71,83 @@ func (*document) MarshalYAML() (interface{}, error) {
 	panic("yamled.Document objects cannot be marshalled indirectly with a YAML encoder. Instead, use Bytes() or Encode() to get the desired results.")
 }
 
-func (d *document) Get(path ...Step) (Node, error) {
-	n, err := NewNode(d.node.Content[0])
+func (d *document) Get(steps ...Step) (Node, bool) {
+	n, err := d.GetRootNode()
+	if err != nil {
+		return nil, false
+	}
+
+	return n.Get(steps...)
+}
+
+func (d *document) MustGet(steps ...Step) Node {
+	n, err := d.GetRootNode()
+	if err != nil {
+		return nil
+	}
+
+	return n.MustGet(steps...)
+}
+
+func (d *document) Set(value interface{}) error {
+	n, err := d.GetRootNode()
+	if err != nil {
+		return err
+	}
+
+	return n.Set(value)
+}
+
+func (d *document) SetKey(key Step, value interface{}) (Node, error) {
+	n, err := d.GetRootNode()
 	if err != nil {
 		return nil, err
 	}
 
-	return n.Get(path...)
+	return n.SetKey(key, value)
+}
+
+func (d *document) SetAt(path Path, value interface{}) (Node, error) {
+	n, err := d.GetRootNode()
+	if err != nil {
+		return nil, err
+	}
+
+	return n.SetAt(path, value)
+}
+
+func (d *document) Replace(value interface{}) error {
+	n, err := d.GetRootNode()
+	if err != nil {
+		return err
+	}
+
+	return n.Replace(value)
+}
+
+func (d *document) ReplaceKey(key Step, value interface{}) (Node, error) {
+	n, err := d.GetRootNode()
+	if err != nil {
+		return nil, err
+	}
+
+	return n.ReplaceKey(key, value)
+}
+
+func (d *document) ReplaceAt(path Path, value interface{}) (Node, error) {
+	n, err := d.GetRootNode()
+	if err != nil {
+		return nil, err
+	}
+
+	return n.ReplaceAt(path, value)
+}
+
+func (d *document) DeleteKey(steps ...Step) error {
+	n, err := d.GetRootNode()
+	if err != nil {
+		return err
+	}
+
+	return n.DeleteKey(steps...)
 }
