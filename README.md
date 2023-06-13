@@ -1,5 +1,17 @@
 # yamled
 
+<p align="center">
+  <img src="https://img.shields.io/github/v/release/xrstf/yamled" alt="last stable release">
+
+  <a href="https://goreportcard.com/report/go.xrstf.de/yamled">
+    <img src="https://goreportcard.com/badge/go.xrstf.de/yamled" alt="go report card">
+  </a>
+
+  <a href="https://pkg.go.dev/go.xrstf.de/yamled">
+    <img src="https://pkg.go.dev/badge/go.xrstf.de/yamled" alt="godoc">
+  </a>
+</p>
+
 `yamled` is a slim Go library that allows you to edit a YAML document
 (parsed by [yaml.v3](https://gopkg.in/yaml.v3)) in-memory. Compared to
 unmarshaling/marshaling data into structs, this approach has the advantage
