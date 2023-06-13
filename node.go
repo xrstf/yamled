@@ -12,8 +12,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// knot is the common behaviour between nodes and documents.
-type knot interface {
+type Node interface {
+	yaml.Marshaler
+
+	Bytes(indent int) ([]byte, error)
+	Encode(encoder *yaml.Encoder) error
+
 	Get(path ...Step) (Node, bool)
 	MustGet(path ...Step) Node
 	Set(value interface{}) error
@@ -25,19 +29,10 @@ type knot interface {
 	ReplaceAt(path Path, value interface{}) (Node, error)
 
 	DeleteKey(steps ...Step) error
-}
-
-type Node interface {
-	yaml.Marshaler
-
-	Bytes(indent int) ([]byte, error)
-	Encode(encoder *yaml.Encoder) error
 
 	ToString() string
 	ToInt() int
 	To(val interface{}) error
-
-	knot
 }
 
 type node struct {

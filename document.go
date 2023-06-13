@@ -26,7 +26,17 @@ type Document interface {
 	Bytes(indent int) ([]byte, error)
 	Encode(encoder *yaml.Encoder) error
 
-	knot
+	Get(path ...Step) (Node, bool)
+	MustGet(path ...Step) Node
+	Set(value interface{}) error
+	SetKey(key Step, value interface{}) (Node, error)
+	SetAt(path Path, value interface{}) (Node, error)
+
+	Replace(value interface{}) error
+	ReplaceKey(key Step, value interface{}) (Node, error)
+	ReplaceAt(path Path, value interface{}) (Node, error)
+
+	DeleteKey(steps ...Step) error
 }
 
 type document struct {
