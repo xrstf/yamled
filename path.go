@@ -95,26 +95,3 @@ func (p Path) Validate() error {
 
 	return nil
 }
-
-func flattenPath(steps []Step) (Path, error) {
-	result := Path{}
-
-	for _, step := range steps {
-		switch asserted := step.(type) {
-		case string:
-			result = append(result, asserted)
-		case int:
-			result = append(result, asserted)
-		case Path:
-			flattened, err := flattenPath(asserted)
-			if err != nil {
-				return nil, err
-			}
-			result = append(result, flattened...)
-		default:
-			return nil, fmt.Errorf("invalid step %v (%T)", step, step)
-		}
-	}
-
-	return result, nil
-}
