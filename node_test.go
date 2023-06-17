@@ -172,3 +172,149 @@ foo:
 		t.Fatalf("Failed to delete key: %v", err)
 	}
 }
+
+func TestNodeAllowSetAnyNodeToNull(t *testing.T) {
+	input := strings.TrimSpace(`
+foo: bar
+hello: world
+list: [1, 2, 3]
+obj: {key: value}
+`)
+
+	node, doc, err := yamlLoad(input)
+	if err != nil {
+		t.Fatalf("Failed to load YAML: %v", err)
+	}
+
+	if _, err := doc.SetKey("foo", nil); err != nil {
+		t.Errorf("Failed to set scalar key to null: %v", err)
+	}
+
+	if _, err := doc.SetKey("list", nil); err != nil {
+		t.Errorf("Failed to set sequence key to null: %v", err)
+	}
+
+	if _, err := doc.SetKey("obj", nil); err != nil {
+		t.Errorf("Failed to set mapping key to null: %v", err)
+	}
+
+	expectYAML(t, node, `
+foo: null
+hello: world
+list: null
+obj: null
+`)
+}
+
+func TestNodeAllowSetNilNodesToAnything(t *testing.T) {
+	input := strings.TrimSpace(`
+str: null
+list: null
+obj: null
+`)
+
+	node, doc, err := yamlLoad(input)
+	if err != nil {
+		t.Fatalf("Failed to load YAML: %v", err)
+	}
+
+	if _, err := doc.SetKey("str", "foo"); err != nil {
+		t.Errorf("Failed to set null node to scalar: %v", err)
+	}
+
+	if _, err := doc.SetKey("list", []int{1, 2, 3}); err != nil {
+		t.Errorf("Failed to set null node to sequence: %v", err)
+	}
+
+	if _, err := doc.SetKey("obj", map[string]int{"foo": 1}); err != nil {
+		t.Errorf("Failed to set null node to mapping: %v", err)
+	}
+
+	expectYAML(t, node, `
+str: foo
+list:
+  - 1
+  - 2
+  - 3
+obj:
+  foo: 1
+`)
+}
+
+func TestNodeForbidKindChange(t *testing.T) {
+	input := strings.TrimSpace(`
+foo: bar
+hello: world
+list: [1, 2, 3]
+obj: {key: value}
+`)
+
+	node, doc, err := yamlLoad(input)
+	if err != nil {
+		t.Fatalf("Failed to load YAML: %v", err)
+	}
+
+	if _, err := doc.SetKey("foo", []string{"foo", "bar"}); err == nil {
+		t.Error("Succeeded in changing scalar to sequence.")
+	}
+
+	if _, err := doc.SetKey("list", "foo"); err == nil {
+		t.Error("Succeeded in changing sequence to scalar.")
+	}
+
+	if _, err := doc.SetKey("obj", "foo"); err == nil {
+		t.Error("Succeeded in changing mapping to scalar.")
+	}
+
+	if _, err := doc.SetKey("list", []string{"foo", "bar"}); err != nil {
+		t.Errorf("Failed to replace list with list: %v", err)
+	}
+
+	expectYAML(t, node, `
+foo: bar
+hello: world
+list:
+  - foo
+  - bar
+obj: {key: value}
+`)
+}
+
+func TestNodeAllowReplacingKinds(t *testing.T) {
+	input := strings.TrimSpace(`
+str: foo
+list: [1, 2, 3]
+obj: {key: value}
+`)
+
+	node, doc, err := yamlLoad(input)
+	if err != nil {
+		t.Fatalf("Failed to load YAML: %v", err)
+	}
+
+	if _, err := doc.ReplaceKey("str", []string{"foo", "bar"}); err != nil {
+		t.Errorf("Failed to replace scalar node with sequence: %v", err)
+	}
+
+	if _, err := doc.ReplaceKey("list", "foo"); err != nil {
+		t.Errorf("Failed to replace sequence node with scalar: %v", err)
+	}
+
+	if _, err := doc.ReplaceKey("obj", "foo"); err != nil {
+		t.Errorf("Failed to replace mapping node with scalar: %v", err)
+	}
+
+	if err := doc.MustGet("obj").Replace([]int{1, 2}); err != nil {
+		t.Errorf("Failed to replace new scalar node with sequence: %v", err)
+	}
+
+	expectYAML(t, node, `
+str:
+  - foo
+  - bar
+list: foo
+obj:
+  - 1
+  - 2
+`)
+}

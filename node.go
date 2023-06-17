@@ -213,7 +213,7 @@ func (n *node) set(value interface{}, forbidKindChange bool) error {
 }
 
 func (n *node) setNode(newNode *yaml.Node, forbidKindChange bool) error {
-	if forbidKindChange && newNode.Kind != n.node.Kind {
+	if forbidKindChange && !compatibleKinds(newNode, n.node) {
 		return errors.New("cannot set a new node kind without replacing the node")
 	}
 
@@ -267,7 +267,7 @@ func (n *node) setKeyNode(key Step, newNode *yaml.Node, forbidKindChange bool) e
 					return errors.New("found key node, but current object has no value node")
 				}
 
-				if forbidKindChange && n.node.Content[i+1].Kind != newNode.Kind {
+				if forbidKindChange && !compatibleKinds(n.node.Content[i+1], newNode) {
 					return errors.New("cannot change the node's kind")
 				}
 
@@ -301,7 +301,7 @@ func (n *node) setKeyNode(key Step, newNode *yaml.Node, forbidKindChange bool) e
 			n.node.Content = append(n.node.Content, nullNode())
 		}
 
-		if forbidKindChange && n.node.Content[step].Kind != newNode.Kind { // todo: make a smarter kind check, so we still allowing replacing null nodes with anything
+		if forbidKindChange && !compatibleKinds(n.node.Content[step], newNode) {
 			return errors.New("cannot change the node's kind")
 		}
 
@@ -500,6 +500,10 @@ func (n *node) To(val interface{}) error {
 
 /////////////////////////////////////////////////////////////////////
 // helpers
+
+func compatibleKinds(a, b *yaml.Node) bool {
+	return a.Kind == b.Kind || isNullNode(a) || isNullNode(b)
+}
 
 func createFittingEmptyNode(s Step) (*yaml.Node, error) {
 	if s == nil {

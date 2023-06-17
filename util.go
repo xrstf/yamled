@@ -53,6 +53,10 @@ func nullNode() *yaml.Node {
 	}
 }
 
+func isNullNode(n *yaml.Node) bool {
+	return n.Kind == yaml.ScalarNode && n.Tag == "!!null"
+}
+
 func mappingNode() *yaml.Node {
 	return &yaml.Node{
 		Kind:    yaml.MappingNode,
