@@ -43,8 +43,6 @@ type Node interface {
 	SetHeadComment(comment string) Node
 	SetLineComment(comment string) Node
 	SetFootComment(comment string) Node
-
-	Foo() *yaml.Node
 }
 
 type node struct {
@@ -93,10 +91,6 @@ func (n *node) Encode(encoder *yaml.Encoder) error {
 
 func (n *node) MarshalYAML() (interface{}, error) {
 	return n.node, nil
-}
-
-func (n *node) Foo() *yaml.Node {
-	return n.node
 }
 
 func (n *node) String() string {
