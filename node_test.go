@@ -12,6 +12,7 @@ func TestNodeGetObjectKey(t *testing.T) {
 	input := strings.TrimSpace(`
 string: bar
 number: 12
+list: [1, 2, 3]
 object:
   key: value
 `)
@@ -53,8 +54,16 @@ object:
 		t.Fatalf("Should have been able to cast node to int, but: %v", err)
 	}
 
+	if m := node.ToMap(); len(m) != 1 {
+		t.Fatalf("ToMap() should have returned a map with 1 element, but has %d.", len(m))
+	}
+
 	if doc.MustGet("nonexisting").ToString() != "" {
 		t.Fatal("Expected to be able to MustGet() a dummy item but failed.")
+	}
+
+	if s := doc.MustGet("list").ToSlice(); len(s) != 3 {
+		t.Fatalf("ToSlice() should have returned a slice with 3 elements, but has %d.", len(s))
 	}
 }
 

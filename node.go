@@ -34,6 +34,8 @@ type Node interface {
 
 	ToString() string
 	ToInt() int
+	ToSlice() []interface{}
+	ToMap() map[string]interface{}
 	To(val interface{}) error
 
 	HeadComment() string
@@ -587,6 +589,32 @@ func (n *node) ToInt() int {
 	}
 
 	return i
+}
+
+func (n *node) ToSlice() []interface{} {
+	if n.node.Kind != yaml.SequenceNode {
+		return nil
+	}
+
+	var values []interface{}
+	if err := n.To(&values); err != nil {
+		return nil
+	}
+
+	return values
+}
+
+func (n *node) ToMap() map[string]interface{} {
+	if n.node.Kind != yaml.MappingNode {
+		return nil
+	}
+
+	var values map[string]interface{}
+	if err := n.To(&values); err != nil {
+		return nil
+	}
+
+	return values
 }
 
 func (n *node) To(val interface{}) error {

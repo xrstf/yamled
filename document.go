@@ -39,6 +39,10 @@ type Document interface {
 
 	DeleteKey(steps ...Step) error
 
+	ToSlice() []interface{}
+	ToMap() map[string]interface{}
+	To(val interface{}) error
+
 	HeadComment() string
 	LineComment() string
 	FootComment() string
@@ -217,4 +221,37 @@ func (d *document) DeleteKey(steps ...Step) error {
 	}
 
 	return n.DeleteKey(steps...)
+}
+
+/////////////////////////////////////////////////////////////////////
+// conversions
+
+func (d *document) ToSlice() []interface{} {
+	if d.node.Kind != yaml.SequenceNode {
+		return nil
+	}
+
+	var values []interface{}
+	if err := d.To(&values); err != nil {
+		return nil
+	}
+
+	return values
+}
+
+func (d *document) ToMap() map[string]interface{} {
+	if d.node.Kind != yaml.MappingNode {
+		return nil
+	}
+
+	var values map[string]interface{}
+	if err := d.To(&values); err != nil {
+		return nil
+	}
+
+	return values
+}
+
+func (d *document) To(val interface{}) error {
+	return d.node.Decode(val)
 }
