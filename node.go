@@ -14,12 +14,14 @@ import (
 
 type Node interface {
 	yaml.Marshaler
+	fmt.Stringer
 
 	Bytes(indent int) ([]byte, error)
 	Encode(encoder *yaml.Encoder) error
 
-	Get(path ...Step) (Node, bool)
-	MustGet(path ...Step) Node
+	Get(steps ...Step) (Node, bool)
+	GetKey(steps ...Step) (KeyNode, bool)
+	MustGet(steps ...Step) Node
 	Set(value interface{}) error
 	SetKey(key Step, value interface{}) (Node, error)
 	SetAt(path Path, value interface{}) (Node, error)
@@ -33,6 +35,16 @@ type Node interface {
 	ToString() string
 	ToInt() int
 	To(val interface{}) error
+
+	HeadComment() string
+	LineComment() string
+	FootComment() string
+
+	SetHeadComment(comment string) Node
+	SetLineComment(comment string) Node
+	SetFootComment(comment string) Node
+
+	Foo() *yaml.Node
 }
 
 type node struct {
@@ -83,6 +95,44 @@ func (n *node) MarshalYAML() (interface{}, error) {
 	return n.node, nil
 }
 
+func (n *node) Foo() *yaml.Node {
+	return n.node
+}
+
+func (n *node) String() string {
+	return n.ToString()
+}
+
+/////////////////////////////////////////////////////////////////////
+// comment API passthrough
+
+func (n *node) HeadComment() string {
+	return n.node.HeadComment
+}
+
+func (n *node) LineComment() string {
+	return n.node.LineComment
+}
+
+func (n *node) FootComment() string {
+	return n.node.FootComment
+}
+
+func (n *node) SetHeadComment(comment string) Node {
+	n.node.HeadComment = comment
+	return n
+}
+
+func (n *node) SetLineComment(comment string) Node {
+	n.node.LineComment = comment
+	return n
+}
+
+func (n *node) SetFootComment(comment string) Node {
+	n.node.FootComment = comment
+	return n
+}
+
 /////////////////////////////////////////////////////////////////////
 // traversal - reading
 
@@ -90,6 +140,57 @@ func (n *node) Get(steps ...Step) (Node, bool) {
 	node, found, _ := n.get(steps...)
 
 	return node, found
+}
+
+func (n *node) GetKey(steps ...Step) (KeyNode, bool) {
+	if len(steps) == 0 {
+		return nil, false
+	}
+
+	var curNode *yaml.Node
+	curNode = n.node
+
+	if len(steps) > 1 {
+		// traverse down up until the last step
+		childNode, found, _ := n.get(steps[:len(steps)-1]...)
+		if !found {
+			return nil, false
+		}
+
+		asserted, ok := childNode.(*node)
+		if !ok {
+			panic("This should never happen.")
+		}
+
+		curNode = asserted.node
+	}
+
+	if curNode.Kind != yaml.MappingNode {
+		return nil, false
+	}
+
+	step := steps[len(steps)-1]
+
+	// mappings are represented as [keyNode, valueNode, keyNode, valueNode, ...]
+	// in this node's content
+	for i := 0; i < len(curNode.Content); i += 2 {
+		kNode := curNode.Content[i]
+
+		// safety check
+		if kNode.Kind != yaml.ScalarNode {
+			continue
+		}
+
+		// we found the key!
+		if kNode.Value == step {
+			return &keyNode{
+				node: kNode,
+			}, true
+		}
+	}
+
+	// key not found
+	return nil, false
 }
 
 func (n *node) MustGet(steps ...Step) Node {

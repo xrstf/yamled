@@ -318,3 +318,33 @@ obj:
   - 2
 `)
 }
+
+func TestNodeComments(t *testing.T) {
+	input := strings.TrimSpace(`
+foo:
+  # this is a comment
+  hello: world
+`)
+
+	node, doc, err := yamlLoad(input)
+	if err != nil {
+		t.Fatalf("Failed to load YAML: %v", err)
+	}
+
+	// As this sets the comments on the _value node_, the
+	// result is not what you might expect. See the KeyNode
+	// tests.
+	doc.MustGet("foo", "hello").
+		SetHeadComment("new head comment").
+		SetLineComment("new line comment").
+		SetFootComment("new foot comment")
+
+	expectYAML(t, node, `
+foo:
+  # this is a comment
+  hello: world # new line comment
+  # new foot comment
+
+  # new head comment
+`)
+}

@@ -26,8 +26,9 @@ type Document interface {
 	Bytes(indent int) ([]byte, error)
 	Encode(encoder *yaml.Encoder) error
 
-	Get(path ...Step) (Node, bool)
-	MustGet(path ...Step) Node
+	Get(steps ...Step) (Node, bool)
+	GetKey(steps ...Step) (KeyNode, bool)
+	MustGet(steps ...Step) Node
 	Set(value interface{}) error
 	SetKey(key Step, value interface{}) (Node, error)
 	SetAt(path Path, value interface{}) (Node, error)
@@ -37,6 +38,14 @@ type Document interface {
 	ReplaceAt(path Path, value interface{}) (Node, error)
 
 	DeleteKey(steps ...Step) error
+
+	HeadComment() string
+	LineComment() string
+	FootComment() string
+
+	SetHeadComment(comment string) Document
+	SetLineComment(comment string) Document
+	SetFootComment(comment string) Document
 }
 
 type document struct {
@@ -81,6 +90,39 @@ func (*document) MarshalYAML() (interface{}, error) {
 	panic("yamled.Document objects cannot be marshalled indirectly with a YAML encoder. Instead, use Bytes() or Encode() to get the desired results.")
 }
 
+/////////////////////////////////////////////////////////////////////
+// comment API passthrough
+
+func (d *document) HeadComment() string {
+	return d.node.HeadComment
+}
+
+func (d *document) LineComment() string {
+	return d.node.LineComment
+}
+
+func (d *document) FootComment() string {
+	return d.node.FootComment
+}
+
+func (d *document) SetHeadComment(comment string) Document {
+	d.node.HeadComment = comment
+	return d
+}
+
+func (d *document) SetLineComment(comment string) Document {
+	d.node.LineComment = comment
+	return d
+}
+
+func (d *document) SetFootComment(comment string) Document {
+	d.node.FootComment = comment
+	return d
+}
+
+/////////////////////////////////////////////////////////////////////
+// traversal - reading
+
 func (d *document) Get(steps ...Step) (Node, bool) {
 	n, err := d.GetRootNode()
 	if err != nil {
@@ -88,6 +130,15 @@ func (d *document) Get(steps ...Step) (Node, bool) {
 	}
 
 	return n.Get(steps...)
+}
+
+func (d *document) GetKey(steps ...Step) (KeyNode, bool) {
+	n, err := d.GetRootNode()
+	if err != nil {
+		return nil, false
+	}
+
+	return n.GetKey(steps...)
 }
 
 func (d *document) MustGet(steps ...Step) Node {
@@ -98,6 +149,9 @@ func (d *document) MustGet(steps ...Step) Node {
 
 	return n.MustGet(steps...)
 }
+
+/////////////////////////////////////////////////////////////////////
+// traversal - writing
 
 func (d *document) Set(value interface{}) error {
 	n, err := d.GetRootNode()
@@ -152,6 +206,9 @@ func (d *document) ReplaceAt(path Path, value interface{}) (Node, error) {
 
 	return n.ReplaceAt(path, value)
 }
+
+/////////////////////////////////////////////////////////////////////
+// traversal - deleting
 
 func (d *document) DeleteKey(steps ...Step) error {
 	n, err := d.GetRootNode()

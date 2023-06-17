@@ -67,3 +67,27 @@ list: [1, 2, 3]
 
 	expectYAML(t, node, input)
 }
+
+func TestDocumentComments(t *testing.T) {
+	input := strings.TrimSpace(`
+# hello world
+
+foo: bar
+`)
+
+	node, doc, err := yamlLoad(input)
+	if err != nil {
+		t.Fatalf("Failed to load YAML: %v", err)
+	}
+
+	doc.SetHeadComment("new head comment")
+	doc.SetFootComment("new foot comment")
+
+	expectYAML(t, node, `
+# new head comment
+
+foo: bar
+
+# new foot comment
+`)
+}
