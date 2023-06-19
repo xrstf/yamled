@@ -19,6 +19,11 @@ type Node interface {
 	Bytes(indent int) ([]byte, error)
 	Encode(encoder *yaml.Encoder) error
 
+	Kind() yaml.Kind
+
+	Style() yaml.Style
+	SetStyle(style yaml.Style) error
+
 	Get(steps ...Step) (Node, bool)
 	GetKey(steps ...Step) (KeyNode, bool)
 	MustGet(steps ...Step) Node
@@ -97,6 +102,20 @@ func (n *node) MarshalYAML() (interface{}, error) {
 
 func (n *node) String() string {
 	return n.ToString()
+}
+
+func (n *node) Kind() yaml.Kind {
+	return n.node.Kind
+}
+
+func (n *node) Style() yaml.Style {
+	return n.node.Style
+}
+
+func (n *node) SetStyle(style yaml.Style) error {
+	n.node.Style = style
+
+	return nil
 }
 
 /////////////////////////////////////////////////////////////////////

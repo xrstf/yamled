@@ -26,6 +26,7 @@ type Document interface {
 	Bytes(indent int) ([]byte, error)
 	Encode(encoder *yaml.Encoder) error
 
+	RootNode() (Node, error)
 	Get(steps ...Step) (Node, bool)
 	GetKey(steps ...Step) (KeyNode, bool)
 	MustGet(steps ...Step) Node
@@ -70,7 +71,7 @@ func NewDocument(n *yaml.Node) (Document, error) {
 	}, nil
 }
 
-func (d *document) GetRootNode() (Node, error) {
+func (d *document) RootNode() (Node, error) {
 	return NewNode(d.node.Content[0])
 }
 
@@ -128,7 +129,7 @@ func (d *document) SetFootComment(comment string) Document {
 // traversal - reading
 
 func (d *document) Get(steps ...Step) (Node, bool) {
-	n, err := d.GetRootNode()
+	n, err := d.RootNode()
 	if err != nil {
 		return nil, false
 	}
@@ -137,7 +138,7 @@ func (d *document) Get(steps ...Step) (Node, bool) {
 }
 
 func (d *document) GetKey(steps ...Step) (KeyNode, bool) {
-	n, err := d.GetRootNode()
+	n, err := d.RootNode()
 	if err != nil {
 		return nil, false
 	}
@@ -146,7 +147,7 @@ func (d *document) GetKey(steps ...Step) (KeyNode, bool) {
 }
 
 func (d *document) MustGet(steps ...Step) Node {
-	n, err := d.GetRootNode()
+	n, err := d.RootNode()
 	if err != nil {
 		return nil
 	}
@@ -158,7 +159,7 @@ func (d *document) MustGet(steps ...Step) Node {
 // traversal - writing
 
 func (d *document) Set(value interface{}) error {
-	n, err := d.GetRootNode()
+	n, err := d.RootNode()
 	if err != nil {
 		return err
 	}
@@ -167,7 +168,7 @@ func (d *document) Set(value interface{}) error {
 }
 
 func (d *document) SetKey(key Step, value interface{}) (Node, error) {
-	n, err := d.GetRootNode()
+	n, err := d.RootNode()
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +177,7 @@ func (d *document) SetKey(key Step, value interface{}) (Node, error) {
 }
 
 func (d *document) SetAt(path Path, value interface{}) (Node, error) {
-	n, err := d.GetRootNode()
+	n, err := d.RootNode()
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +186,7 @@ func (d *document) SetAt(path Path, value interface{}) (Node, error) {
 }
 
 func (d *document) Replace(value interface{}) error {
-	n, err := d.GetRootNode()
+	n, err := d.RootNode()
 	if err != nil {
 		return err
 	}
@@ -194,7 +195,7 @@ func (d *document) Replace(value interface{}) error {
 }
 
 func (d *document) ReplaceKey(key Step, value interface{}) (Node, error) {
-	n, err := d.GetRootNode()
+	n, err := d.RootNode()
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +204,7 @@ func (d *document) ReplaceKey(key Step, value interface{}) (Node, error) {
 }
 
 func (d *document) ReplaceAt(path Path, value interface{}) (Node, error) {
-	n, err := d.GetRootNode()
+	n, err := d.RootNode()
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +216,7 @@ func (d *document) ReplaceAt(path Path, value interface{}) (Node, error) {
 // traversal - deleting
 
 func (d *document) DeleteKey(steps ...Step) error {
-	n, err := d.GetRootNode()
+	n, err := d.RootNode()
 	if err != nil {
 		return err
 	}
