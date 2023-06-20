@@ -39,6 +39,7 @@ type Node interface {
 
 	ToString() string
 	ToInt() int
+	ToBool() bool
 	ToSlice() []interface{}
 	ToMap() map[string]interface{}
 	To(val interface{}) error
@@ -608,6 +609,19 @@ func (n *node) ToInt() int {
 	}
 
 	return i
+}
+
+func (n *node) ToBool() bool {
+	if n.node.Kind != yaml.ScalarNode {
+		return false
+	}
+
+	var b bool
+	if err := n.To(&b); err != nil {
+		return false
+	}
+
+	return b
 }
 
 func (n *node) ToSlice() []interface{} {
